@@ -1,112 +1,146 @@
-//-----------------------------------------------------
-// Design Name : syn_fifo
-// File Name   : syn_fifo.v
-// Function    : Synchronous (single clock) FIFO
-// Coder       : Deepak Kumar Tala
-//-----------------------------------------------------
-module sync_fifo (
-clk      , // Clock input
-rst      , // Active high reset
-wr_cs    , // Write chip select
-rd_cs    , // Read chipe select
-data_in  , // Data input
-rd_en    , // Read enable
-wr_en    , // Write Enable
-data_out , // Data Output
-empty    , // FIFO empty
-full       // FIFO full
-);    
+/*********************************************************************
  
-  
-initial begin
-  $dumpfile("dump.vcd"); 
-  $dumpvars(0,top_hdl.sync_fifo);
-    	
-end
-// FIFO constants
-parameter DATA_WIDTH = 8;
-parameter ADDR_WIDTH = 8;
-parameter RAM_DEPTH = (1 << ADDR_WIDTH);
-// Port Declarations
-input clk ;
-input rst ;
-input wr_cs ;
-input rd_cs ;
-input rd_en ;
-input wr_en ;
-input [DATA_WIDTH-1:0] data_in ;
-output full ;
-output empty ;
-output [DATA_WIDTH-1:0] data_out ;
-
-//-----------Internal variables-------------------
-reg [ADDR_WIDTH-1:0] wr_pointer;
-reg [ADDR_WIDTH-1:0] rd_pointer;
-reg [ADDR_WIDTH :0] status_cnt;
-reg [DATA_WIDTH-1:0] data_out ;
-wire [DATA_WIDTH-1:0] data_ram ;
-
-//-----------Variable assignments---------------
-assign full = (status_cnt == (RAM_DEPTH-1));
-assign empty = (status_cnt == 0);
-
-//-----------Code Start---------------------------
-always @ (posedge clk or posedge rst)
-begin : WRITE_POINTER
-  if (rst) begin
-    wr_pointer <= 0;
-  end else if (wr_cs && wr_en ) begin
-    wr_pointer <= wr_pointer + 1;
-  end
-end
-
-always @ (posedge clk or posedge rst)
-begin : READ_POINTER
-  if (rst) begin
-    rd_pointer <= 0;
-  end else if (rd_cs && rd_en) begin
-    rd_pointer <= rd_pointer + 1;
-  end
-end
-
-always  @ (posedge clk or posedge rst)
-begin : READ_DATA
-  if (rst) begin
-    data_out <= 0;
-  end else if (rd_cs && rd_en ) begin
-    data_out <= data_ram;
-  end
-end
-
-always @ (posedge clk or posedge rst)
-begin : STATUS_COUNTER
-  if (rst) begin
-    status_cnt <= 0;
-  // Read but no write.
-  end else if ((rd_cs && rd_en) && !(wr_cs && wr_en) 
-                && (status_cnt != 0)) begin
-    status_cnt <= status_cnt - 1;
-  // Write but no read.
-  end else if ((wr_cs && wr_en) && !(rd_cs && rd_en) 
-               && (status_cnt != RAM_DEPTH)) begin
-    status_cnt <= status_cnt + 1;
-  end
-end 
-   
-ram_dp_ar_aw #(DATA_WIDTH,ADDR_WIDTH)DP_RAM (
-.address_0 (wr_pointer) , // address_0 input 
-.data_0    (data_in)    , // data_0 bi-directional
-.cs_0      (wr_cs)      , // chip select
-.we_0      (wr_en)      , // write enable
-.oe_0      (1'b0)       , // output enable
-.address_1 (rd_pointer) , // address_q input
-.data_1    (data_ram)   , // data_1 bi-directional
-.cs_1      (rd_cs)      , // chip select
-.we_1      (1'b0)       , // Read enable
-.oe_1      (rd_en)        // output enable
-);     
-
+  This file is part of the sdram controller project           
+  http://www.opencores.org/cores/sdr_ctrl/                    
+ 
+  Description: SYNC FIFO 
+  Parameters:
+      W : Width (integer)
+      D : Depth (integer, power of 2, 4 to 256)
+ 
+  To Do:                                                      
+    nothing                                                   
+ 
+  Author(s):  Dinesh Annayya, dinesha@opencores.org                 
+ 
+ Copyright (C) 2000 Authors and OPENCORES.ORG                
+ 
+ This source file may be used and distributed without         
+ restriction provided that this copyright statement is not    
+ removed from the file and that any derivative work contains  
+ the original copyright notice and the associated disclaimer. 
+ 
+ This source file is free software; you can redistribute it   
+ and/or modify it under the terms of the GNU Lesser General   
+ Public License as published by the Free Software Foundation; 
+ either version 2.1 of the License, or (at your option) any   
+later version.                                               
+ 
+ This source is distributed in the hope that it will be       
+ useful, but WITHOUT ANY WARRANTY; without even the implied   
+ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+ PURPOSE.  See the GNU Lesser General Public License for more 
+ details.                                                     
+ 
+ You should have received a copy of the GNU Lesser General    
+ Public License along with this source; if not, download it   
+ from http://www.opencores.org/lgpl.shtml                     
+ 
+*******************************************************************/
+ 
+ 
+module sync_fifo (clk,
+	          reset_n,
+		  wr_en,
+		  wr_data,
+		  full,
+		  empty,
+		  rd_en,
+		  rd_data);
+ 
+   parameter W = 8;
+   parameter D = 4;
+ 
+   parameter AW = (D == 4)   ? 2 :
+		  (D == 8)   ? 3 :
+		  (D == 16)  ? 4 :
+		  (D == 32)  ? 5 :
+		  (D == 64)  ? 6 :
+		  (D == 128) ? 7 :
+		  (D == 256) ? 8 : 0;
+ 
+   output [W-1 : 0]  rd_data;
+   input [W-1 : 0]   wr_data;
+   input 	     clk, reset_n, wr_en, rd_en;
+   output 	     full, empty;
+ 
+   // synopsys translate_off
+ 
+   initial begin
+      if (AW == 0) begin
+	 $display ("%m : ERROR!!! Fifo depth %d not in range 4 to 256", D);
+      end // if (AW == 0)
+   end // initial begin
+ 
+   // synopsys translate_on
+ 
+ 
+   reg [W-1 : 0]    mem[D-1 : 0];
+   reg [AW-1 : 0]   rd_ptr, wr_ptr;
+   reg	 	    full, empty;
+ 
+   wire [W-1 : 0]   rd_data;
+ 
+   always @ (posedge clk or negedge reset_n) 
+      if (reset_n == 1'b0) begin
+         wr_ptr <= {AW{1'b0}} ;
+      end
+      else begin
+         if (wr_en & !full) begin
+            wr_ptr <= wr_ptr + 1'b1 ;
+         end
+      end
+ 
+   always @ (posedge clk or negedge reset_n) 
+      if (reset_n == 1'b0) begin
+         rd_ptr <= {AW{1'b0}} ;
+      end
+      else begin
+         if (rd_en & !empty) begin
+            rd_ptr <= rd_ptr + 1'b1 ;
+         end
+      end
+ 
+ 
+   always @ (posedge clk or negedge reset_n) 
+      if (reset_n == 1'b0) begin
+         empty <= 1'b1 ;
+      end
+      else begin
+         empty <= (((wr_ptr - rd_ptr) == {{(AW-1){1'b0}}, 1'b1}) & rd_en & ~wr_en) ? 1'b1 : 
+                   ((wr_ptr == rd_ptr) & ~rd_en & wr_en) ? 1'b0 : empty ;
+      end
+ 
+   always @ (posedge clk or negedge reset_n) 
+      if (reset_n == 1'b0) begin
+         full <= 1'b0 ;
+      end
+      else begin
+         full <= (((wr_ptr - rd_ptr) == {{(AW-1){1'b1}}, 1'b0}) & ~rd_en & wr_en) ? 1'b1 : 
+                 (((wr_ptr - rd_ptr) == {AW{1'b1}}) & rd_en & ~wr_en) ? 1'b0 : full ;
+      end
+ 
+   always @ (posedge clk) 
+      if (wr_en)
+	 mem[wr_ptr] <= wr_data;
+ 
+assign  rd_data = mem[rd_ptr];
+ 
+ 
+// synopsys translate_off
+   always @(posedge clk) begin
+      if (wr_en && full) begin
+         $display("%m : Error! sfifo overflow!");
+      end
+   end
+ 
+   always @(posedge clk) begin
+      if (rd_en && empty) begin
+         $display("%m : error! sfifo underflow!");
+      end
+   end
+ 
+// synopsys translate_on
+//---------------------------------------
+ 
 endmodule
-
-
-

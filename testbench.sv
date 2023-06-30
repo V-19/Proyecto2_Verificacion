@@ -1,11 +1,4 @@
-`include "top_hvl.sv"
-`include "interface.sv"
-`include "driver.sv"
-`include "monitor.sv"
-`include "scoreboard.sv"
-`include "coverage.sv"
-`include "agent.sv"
-`include "env.sv"
-`include "test_1.sv"
-`include "test_2.sv"
-`include "test_3.sv"
+// Code your testbench here
+// or browse Examples
+//`include "tb_core.sv"
+`include "tb_top.sv"

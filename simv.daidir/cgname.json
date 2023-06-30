@@ -1,0 +1,104 @@
+{
+    "_vcs_DPI_package": [
+        "_vcs_DPI_package",
+        "uM9F1",
+        "module",
+        1
+    ],
+    "vcs_paramclassrepository": [
+        "vcs_paramclassrepository",
+        "hEeZs",
+        "module",
+        2
+    ],
+    "_vcs_unit__4235561478": [
+        "_vcs_unit__4235561478",
+        "bu7dM",
+        "module",
+        3
+    ],
+    "std": [
+        "std",
+        "reYIK",
+        "module",
+        4
+    ],
+    "uvm_pkg": [
+        "uvm_pkg",
+        "zr7M1",
+        "module",
+        5
+    ],
+    "sdrc_bank_fsm": [
+        "sdrc_bank_fsm",
+        "ChjVu",
+        "module",
+        6
+    ],
+    "sdrc_bs_convert": [
+        "sdrc_bs_convert",
+        "pZbSg",
+        "module",
+        7
+    ],
+    "sdrc_core": [
+        "sdrc_core",
+        "yYhTI",
+        "module",
+        8
+    ],
+    "sdrc_top": [
+        "sdrc_top",
+        "NTNU2",
+        "module",
+        9
+    ],
+    "sync_fifo": [
+        "sync_fifo",
+        "gWQCM",
+        "module",
+        10
+    ],
+    "mt48lc2m32b2": [
+        "mt48lc2m32b2",
+        "a3mSN",
+        "module",
+        11
+    ],
+    "mt48lc8m8a2": [
+        "mt48lc8m8a2",
+        "Pj51K",
+        "module",
+        12
+    ],
+    "top_hdl": [
+        "top_hdl",
+        "ZAbDk",
+        "module",
+        13
+    ],
+    "top_hvl": [
+        "top_hvl",
+        "uddwc",
+        "module",
+        14
+    ],
+    "intf_WB_G2": [
+        "intf_WB_G2",
+        "HIQtA",
+        "module",
+        15
+    ],
+    "intf_SRAM_G2": [
+        "intf_SRAM_G2",
+        "Bu63C",
+        "module",
+        16
+    ],
+    "...MASTER...": [
+        "SIM",
+        "amcQw",
+        "module",
+        17
+    ]
+}
